@@ -17,7 +17,7 @@ A lightweight web UI for monitoring and controlling [Gluetun](https://github.com
 - **DNS status** — confirms gluetun's internal DNS resolver is running
 - **Start / Stop controls** — send start/stop commands to gluetun from the UI
 - **Auto-refresh** — configurable polling interval (5s / 10s / 30s / 60s / off)
-- **Poll history** — last 30 status ticks colour-coded (connected / paused / unknown)
+- **Poll history** — last 30 status ticks colour-coded (connected / paused / disconnected / unknown)
 - **No poll stacking** — uses recursive `setTimeout` + in-flight guard to prevent overlapping requests
 
 ---
@@ -80,6 +80,8 @@ docker compose up -d --build
 
 The UI is available at **http://localhost:3000**
 
+> **Note:** The port is bound to `127.0.0.1` only. It is not exposed to the wider network. To access it remotely, use a reverse proxy (see [Security](#security)).
+
 ---
 
 ## Configuration
@@ -106,6 +108,7 @@ The Node.js server proxies gluetun's control API and exposes:
 | `GET` | `/api/status` | VPN running status |
 | `GET` | `/api/publicip` | Public exit IP and geo info |
 | `GET` | `/api/portforwarded` | Forwarded port number |
+| `GET` | `/api/settings` | VPN provider and protocol settings |
 | `GET` | `/api/dns` | DNS resolver status |
 | `PUT` | `/api/vpn/start` | Start the VPN tunnel |
 | `PUT` | `/api/vpn/stop` | Stop the VPN tunnel |
@@ -128,7 +131,7 @@ The Node.js server proxies gluetun's control API and exposes:
 | Badge | Colour | Meaning |
 |---|---|---|
 | OK | Green | Service healthy |
-| UNKNOWN | Yellow | Service reachable but not running |
+| Warn | Yellow | Service reachable but not running |
 | Error | Red | Service unreachable |
 
 ---
@@ -145,6 +148,37 @@ The Node.js server proxies gluetun's control API and exposes:
 | `GET /v1/dns/status` | DNS resolver status |
 
 > **Note:** `/v1/vpn/status` and `/v1/vpn/settings` are protocol-agnostic — this UI works with both WireGuard and OpenVPN without any configuration change.
+
+---
+
+## Security
+
+### Rate limiting
+
+The server enforces per-IP rate limits to protect the upstream Gluetun API:
+
+| Scope | Limit |
+|---|---|
+| All `GET /api/*` routes | 120 requests / minute |
+| `PUT /api/vpn/:action` | 10 requests / minute |
+
+### Security headers
+
+Every response includes: `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and `Permissions-Policy`.
+
+### Docker hardening
+
+The provided `docker-compose.yml` and `Dockerfile` apply the following hardening by default:
+
+- Port bound to `127.0.0.1` only (not exposed to the network)
+- Non-root user inside the container
+- Read-only root filesystem (`read_only: true`) with a `tmpfs` at `/tmp`
+- `no-new-privileges: true` and `cap_drop: ALL`
+- `X-Powered-By` header suppressed
+
+### Reverse-proxy authentication
+
+The VPN start/stop endpoints (`PUT /api/vpn/:action`) have no UI-layer authentication. If you expose this service beyond localhost, place it behind a reverse proxy with HTTP Basic auth (Nginx, Caddy, Traefik, etc.).
 
 ---
 
