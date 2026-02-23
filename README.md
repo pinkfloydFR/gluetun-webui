@@ -24,7 +24,7 @@ A lightweight web UI for monitoring and controlling [Gluetun](https://github.com
 
 ## Screenshots
 
-> VPN connected, WireGuard, Surfshark
+> Example: VPN connected, WireGuard
 
 | Banner | Cards |
 |--------|-------|
