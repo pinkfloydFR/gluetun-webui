@@ -6,7 +6,7 @@ services:
     image: gluetun-webui:latest
     container_name: gluetun-webui
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       # Reaches the gluetun container on the shared arr-stack network
       - GLUETUN_CONTROL_URL=http://gluetun:8000
@@ -19,6 +19,13 @@ services:
     networks:
       - arr-stack
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
       interval: 30s

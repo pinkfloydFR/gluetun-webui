@@ -3,6 +3,7 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 
 const app = express();
+app.disable('x-powered-by');
 const PORT = process.env.PORT || 3000;
 const GLUETUN_URL = process.env.GLUETUN_CONTROL_URL || 'http://gluetun:8000';
 
@@ -41,6 +42,7 @@ app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   next();
 });
 
@@ -54,6 +56,7 @@ async function gluetunFetch(endpoint, method = 'GET', body = null) {
   const opts = {
     method,
     signal: controller.signal,
+    redirect: 'error',
     headers: {
       ...(body !== null ? { 'Content-Type': 'application/json' } : {}),
       ...buildAuthHeaders(),

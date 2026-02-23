@@ -2,8 +2,12 @@
 
 const MAX_HISTORY = 30;
 const SESSION_KEY = 'gluetun_history';
+const VALID_STATES = new Set(['connected', 'paused', 'disconnected', 'unknown']);
 const statusHistory = (() => {
-  try { return JSON.parse(sessionStorage.getItem(SESSION_KEY)) ?? []; } catch (_) { return []; }
+  try {
+    const raw = JSON.parse(sessionStorage.getItem(SESSION_KEY));
+    return Array.isArray(raw) ? raw.filter(s => VALID_STATES.has(s)) : [];
+  } catch (_) { return []; }
 })();
 let refreshTimer = null;
 let isPolling = false;
