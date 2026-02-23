@@ -18,6 +18,8 @@
 | S-04 | 🔵 Low | `src/server.js` | **Error handler logs raw upstream error messages.** `console.error('[error]', err.message)` may include truncated Gluetun response bodies in container logs. Consider structured logging with level filtering. |
 | S-05 | 🔵 Low | `src/server.js` | **No `Strict-Transport-Security` (HSTS) header.** Intentionally omitted for plain-HTTP local use. Must be added if the app is ever placed behind an HTTPS reverse proxy. |
 | S-06 | 🔵 Low | `src/server.js` | **Rate limiter uses in-memory store.** Counters reset on every container restart. Acceptable for single-instance home use; note for any production or shared deployment. |
+| S-07 | 🟡 Medium | `src/server.js` | **Upstream error messages forwarded to browser.** `gluetunFetch` throws errors containing the upstream status code and up to 200 chars of the response body. Route handlers pass `err.message` directly into the JSON response (`res.json({ error: err.message })`), potentially leaking internal API paths, version strings, or debug info from Gluetun. Return a generic message to the client and log the detail server-side only. |
+| S-08 | 🔵 Low | `src/server.js` | **No graceful shutdown handler.** The process does not handle `SIGTERM`/`SIGINT`. Docker sends `SIGTERM` on `docker stop`; without a handler, in-flight requests are dropped and the process falls back to `SIGKILL` after the timeout. Add `process.on('SIGTERM', () => server.close())`. |
 
 ### Code Quality / Correctness
 
@@ -27,6 +29,14 @@
 | C-02 | 🔵 Low | `src/public/app.js` | **Total server failure does not reset card fields.** When `fetchHealth()` throws (Node server unreachable), the catch block only calls `renderBanner`. The four data cards retain stale values from the last successful poll. Call `renderPublicIp`, `renderPortForwarded`, `renderDns`, and reset the VPN card fields in the catch path. |
 | C-03 | 🔵 Low | `package.json` | **Express 4 used; Express 5 is stable.** Express 5 (released Oct 2024) adds native async error propagation, deprecating the manual 4-argument error handler. Non-urgent upgrade candidate. |
 | C-04 | 🔵 Low | All | **No tests.** No unit or integration test suite exists. The highest-value targets are `gluetunFetch` error handling, the `renderVpnStatus` state machine, and `renderBanner` output for each state. |
+| C-05 | 🔵 Low | `src/public/app.js` | **`innerHTML` used for spinner markup.** `refreshBtn.innerHTML = '<span class="spin">…</span> Refresh'` is safe (hardcoded string) but inconsistent with the `textContent`-only approach used everywhere else. Use `document.createElement` for consistency. |
+| C-06 | 🔵 Low | `src/server.js` | **`express.json()` runs on every request.** The body parser is registered globally but only the `PUT /api/vpn/:action` route consumes a body. Scope it to that route or to `/api/vpn` to skip unnecessary parsing on GETs. |
+
+### Infrastructure / Docker
+
+| # | Severity | File | Finding |
+|---|---|---|---|
+| D-01 | 🔵 Low | `docker-compose.yml` | **No resource limits.** No `mem_limit`, `cpus`, or `pids_limit` defined. Add `deploy.resources.limits` or compose v2 resource keys to prevent resource exhaustion. |
 
 ---
 
@@ -66,10 +76,15 @@
 
 ## Recommended Next Steps (priority order)
 
-1. **S-01** — Restrict `express.json({ limit: '2kb' })` (one line change)
-2. **S-02** — Document reverse-proxy auth setup in README; add example Caddy/Nginx snippet
-3. **S-03** — Validate `GLUETUN_CONTROL_URL` at startup with `new URL()`
-4. **C-02** — Reset all card fields in `poll()` catch block
-5. **C-01** — Remove unused `running` from destructuring in `poll()`
-6. **C-04** — Add tests for `gluetunFetch`, `renderVpnStatus`, and `renderBanner`
-7. **C-03** — Plan Express 5 migration (review changelog for breaking changes first)
+1. **S-01** — Restrict `express.json({ limit: '2kb' })` (one-line change)
+2. **S-07** — Stop forwarding upstream error details to the browser; return generic message
+3. **C-02** — Reset all card fields in `poll()` catch block
+4. **S-03** — Validate `GLUETUN_CONTROL_URL` at startup with `new URL()`
+5. **S-08** — Add graceful shutdown handler (`SIGTERM` / `SIGINT`)
+6. **S-02** — Document reverse-proxy auth setup in README; add example Caddy/Nginx snippet
+7. **C-01** — Remove unused `running` from destructuring in `poll()`
+8. **C-06** — Scope `express.json()` to PUT routes only
+9. **C-04** — Add tests for `gluetunFetch`, `renderVpnStatus`, and `renderBanner`
+10. **C-05** — Replace `innerHTML` spinner with `createElement`
+11. **D-01** — Add container resource limits to `docker-compose.yml`
+12. **C-03** — Plan Express 5 migration (review changelog for breaking changes first)
