@@ -27,7 +27,7 @@ function setBadge(id, state) {
   const el = $(id);
   if (!el) return;
   el.className = `badge ${state}`;
-  el.textContent = state === 'ok' ? 'OK' : state === 'error' ? 'Error' : 'Unknown';
+  el.textContent = state === 'ok' ? 'OK' : state === 'error' ? 'Error' : 'Warn';
 }
 
 // ---- History track ----

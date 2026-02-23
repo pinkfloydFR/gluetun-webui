@@ -1,5 +1,4 @@
 const express = require('express');
-const fetch = require('node-fetch');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 
@@ -23,6 +22,17 @@ function buildAuthHeaders() {
   }
   return {};
 }
+
+// General read rate limiter (covers all /api/* GET routes)
+const readLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: 'Too many requests, please try again later.' },
+});
+
+app.use('/api/', readLimiter);
 
 // Security headers
 app.use((req, res, next) => {
@@ -54,7 +64,7 @@ async function gluetunFetch(endpoint, method = 'GET', body = null) {
     const res = await fetch(url, opts);
     if (!res.ok) {
       const text = await res.text().catch(() => '');
-      throw new Error(`Gluetun returned ${res.status}${text ? ': ' + text.trim() : ''} for ${endpoint}`);
+      throw new Error(`Gluetun returned ${res.status}${text ? ': ' + text.slice(0, 200).trim() : ''}`);
     }
     return res.json();
   } finally {
@@ -162,6 +172,13 @@ app.put('/api/vpn/:action', vpnActionLimiter, async (req, res) => {
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Global error handler – catches synchronous throws and next(err) calls
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error('[error]', err.message);
+  res.status(500).json({ ok: false, error: 'Internal server error' });
 });
 
 app.listen(PORT, () => {

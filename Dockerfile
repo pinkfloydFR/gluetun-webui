@@ -1,14 +1,13 @@
 # ---- Build stage ----
 FROM node:20-alpine AS deps
 WORKDIR /app
-# Copy lockfile alongside package.json for deterministic installs.
-# Once package-lock.json is committed, change `npm install` to `npm ci`.
 COPY package*.json ./
-RUN npm install --omit=dev --no-audit --no-fund
+RUN npm ci --omit=dev --no-audit --no-fund
 
 # ---- Final stage ----
 FROM node:20-alpine
 WORKDIR /app
+ENV NODE_ENV=production
 
 # Add non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
