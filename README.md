@@ -41,7 +41,7 @@ A lightweight web UI for monitoring and controlling [Gluetun](https://github.com
 Use the pre-built image from Docker Hub:
 
 ```bash
-docker pull Sir-Scuzza/gluetun-webui:latest
+docker pull scuzza/gluetun-webui:latest
 ```
 
 Then create a `docker-compose.yml` (see example below) and run:
@@ -57,7 +57,7 @@ name: gluetun-webui
 
 services:
   gluetun-webui:
-    image: Sir-Scuzza/gluetun-webui:latest
+    image: scuzza/gluetun-webui:latest
     container_name: gluetun-webui
     ports:
       - "127.0.0.1:3000:3000"

@@ -2,7 +2,7 @@ name: gluetun-webui
 
 services:
   gluetun-webui:
-    image: Sir-Scuzza/gluetun-webui:latest
+    image: scuzza/gluetun-webui:latest
     container_name: gluetun-webui
     ports:
       - "127.0.0.1:3000:3000"
