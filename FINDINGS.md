@@ -1,6 +1,6 @@
 # Code Review Findings
 
-> Last reviewed: 2026-02-23  
+> Last reviewed: 2026-02-24  
 > Scope: security, correctness, reliability, code quality  
 > Status key: 🔴 High · 🟡 Medium · 🔵 Low · ✅ Fixed
 
@@ -43,7 +43,7 @@
 ## Fixed Findings (resolved in this review cycle)
 
 <details>
-<summary>Click to expand — 22 issues resolved</summary>
+<summary>Click to expand — 26 issues resolved</summary>
 
 | # | Severity | Finding |
 |---|---|---|
@@ -52,6 +52,10 @@
 | F-03 | 🔴 High | `npm install` instead of `npm ci` — non-deterministic builds |
 | F-04 | 🔴 High | `--no-audit` suppressed npm vulnerability scanning in the Docker build |
 | F-05 | 🔴 High | Port bound to `0.0.0.0` — UI exposed to entire local network |
+| F-23 | 🔴 High | CVE-2026-26996 (minimatch 10.1.2) — CVSS 8.7 high severity vulnerability in transitive dependency |
+| F-24 | 🔴 High | CVE-2026-26960 (tar 7.5.7) — CVSS 7.1 high severity vulnerability in transitive dependency |
+| F-25 | 🟡 Medium | Docker base image Alpine 20 — reached end-of-life; upgraded to Alpine 25 for security patches |
+| F-26 | 🟡 Medium | Missing rate limiting on static file routes — UI assets unprotected from request flood attacks |
 | F-06 | 🟡 Medium | `NODE_ENV=production` not set in Dockerfile |
 | F-07 | 🟡 Medium | `node-fetch` dependency unnecessary — Node 20 ships native `fetch` |
 | F-08 | 🟡 Medium | `docker-compose` healthcheck missing `start_period` |
@@ -88,3 +92,12 @@
 10. **C-05** — Replace `innerHTML` spinner with `createElement`
 11. **D-01** — Add container resource limits to `docker-compose.yml`
 12. **C-03** — Plan Express 5 migration (review changelog for breaking changes first)
+
+---
+
+## Recent Updates (2026-02-24)
+
+- **F-23 & F-24 (CVE Fixes)**: Added explicit `minimatch@^10.2.1` and `tar@^7.5.8` to `package.json` to resolve high-severity transitive dependency vulnerabilities. Docker image now contains minimatch 10.2.2 and tar 7.5.9.
+- **F-25 (Alpine Upgrade)**: Updated Dockerfile base image from `node:20-alpine` to `node:25-alpine` to receive latest security patches and address EOL concerns.
+- **F-26 (UI Rate Limiting)**: Applied `uiLimiter` middleware to static file routes (`express.static`) to protect `/` and asset serving from request floods. Limits: 100 requests per 15 minutes per IP.
+- **Docker image digest**: `sha256:22f8880cc914f3c85e17afe732b0fcef8d5b4382e2c24b7cee5720828ae28e70`
