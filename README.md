@@ -1,4 +1,4 @@
-# Gluetun Monitor
+# Gluetun Webui
 
 A lightweight web UI for monitoring and controlling [Gluetun](https://github.com/qdm12/gluetun) — the VPN client container for Docker.
 
@@ -36,20 +36,66 @@ A lightweight web UI for monitoring and controlling [Gluetun](https://github.com
 
 ## Quick Start
 
-### 1. Clone
+### Option A: Docker Hub (Recommended)
+
+Use the pre-built image from Docker Hub:
 
 ```bash
-git clone https://github.com/youruser/gluetun-webui.git
+docker pull Sir-Scuzza/gluetun-webui:latest
+```
+
+Then create a `docker-compose.yml` (see example below) and run:
+
+```bash
+docker compose up -d
+```
+
+**Example docker-compose.yml:**
+
+```yaml
+name: gluetun-webui
+
+services:
+  gluetun-webui:
+    image: Sir-Scuzza/gluetun-webui:latest
+    container_name: gluetun-webui
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - GLUETUN_CONTROL_URL=http://gluetun:8000
+    networks:
+      - your_network_name
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+networks:
+  ext-network:
+    external: true
+    name: your_network_name
+```
+
+### Option B: Build Locally
+
+Clone and build from source:
+
+```bash
+git clone https://github.com/Sir-Scuzza/gluetun-webui.git
 cd gluetun-webui
 ```
 
-### 2. Configure
+### 4. Configure
 
-Edit `docker-compose.yml` and set the network name to match your existing stack:
+Edit your `docker-compose.yml` and set the network name to match your existing stack:
 
 ```yaml
 networks:
-  arr-stack:
+  ext-network:
     external: true
     name: your_network_name   # ← change this
 ```
@@ -66,8 +112,14 @@ environment:
   # - GLUETUN_PASSWORD=password
 ```
 
-### 3. Deploy
+### 5. Deploy
 
+For Docker Hub images, use:
+```bash
+docker compose up -d
+```
+
+For local builds, use:
 ```bash
 docker compose up -d --build
 ```
