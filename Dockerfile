@@ -2,7 +2,7 @@
 FROM node:25-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --omit=dev --no-fund
+RUN npm install --omit=dev --no-fund
 
 # ---- Final stage ----
 FROM node:25-alpine
