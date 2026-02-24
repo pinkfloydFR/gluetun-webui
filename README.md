@@ -32,6 +32,8 @@ A lightweight web UI for monitoring and controlling [Gluetun](https://github.com
 - Gluetun running with its HTTP control server enabled (default port `8000`)
 - Both containers on the same Docker network
 
+> **Multi-platform support:** The Docker image supports both `linux/amd64` and `linux/arm64`, so it works seamlessly on Mac (Intel & Apple Silicon), Linux, and Windows.
+
 ---
 
 ## Quick Start
