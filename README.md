@@ -21,7 +21,7 @@ A lightweight web UI for monitoring and controlling [Gluetun](https://github.com
 ---
 
 ## Screenshots
-![alt text](image.png)
+![alt text](image-1.png)
 
 ---
 
