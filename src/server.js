@@ -76,7 +76,7 @@ async function gluetunFetch(endpoint, method = 'GET', body = null, baseUrl = '',
   const opts = {
     method,
     signal: controller.signal,
-    redirect: 'error',
+    redirect: 'follow',
     headers: {
       ...(body !== null ? { 'Content-Type': 'application/json' } : {}),
       ...(apiKey ? { 'X-API-Key': apiKey } : {}),
@@ -93,12 +93,22 @@ async function gluetunFetch(endpoint, method = 'GET', body = null, baseUrl = '',
     }
     if (!res.ok) {
       const text = await res.text().catch(() => '');
-      throw new Error(`Gluetun returned ${res.status} for ${endpoint}${text ? ': ' + text.slice(0, 200).trim() : ''}`);
+      const err = new Error(`Gluetun returned ${res.status} for ${endpoint}${text ? ': ' + text.slice(0, 200).trim() : ''}`);
+      err.status = res.status;
+      throw err;
     }
     return res.json();
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+function handleUpstreamError(err, res) {
+  console.error('[upstream]', err.message);
+  if (err.status === 401) {
+    return res.status(401).json({ ok: false, error: 'Unauthorized: configure GLUETUN_API_KEY' });
+  }
+  res.status(502).json({ ok: false, error: 'Upstream error' });
 }
 
 // --- Instance list ---
@@ -121,8 +131,7 @@ app.get('/api/status', async (req, res) => {
     const data = await gluetunFetch('/v1/vpn/status', 'GET', null, inst.url, inst.apiKey);
     res.json({ ok: true, data });
   } catch (err) {
-    console.error('[upstream]', err.message);
-    res.status(502).json({ ok: false, error: 'Upstream error' });
+    handleUpstreamError(err, res);
   }
 });
 
@@ -133,8 +142,7 @@ app.get('/api/publicip', async (req, res) => {
     const data = await gluetunFetch('/v1/publicip/ip', 'GET', null, inst.url, inst.apiKey);
     res.json({ ok: true, data });
   } catch (err) {
-    console.error('[upstream]', err.message);
-    res.status(502).json({ ok: false, error: 'Upstream error' });
+    handleUpstreamError(err, res);
   }
 });
 
@@ -145,8 +153,7 @@ app.get('/api/portforwarded', async (req, res) => {
     const data = await gluetunFetch('/v1/openvpn/portforwarded', 'GET', null, inst.url, inst.apiKey);
     res.json({ ok: true, data });
   } catch (err) {
-    console.error('[upstream]', err.message);
-    res.status(502).json({ ok: false, error: 'Upstream error' });
+    handleUpstreamError(err, res);
   }
 });
 
@@ -157,8 +164,7 @@ app.get('/api/settings', async (req, res) => {
     const data = await gluetunFetch('/v1/vpn/settings', 'GET', null, inst.url, inst.apiKey);
     res.json({ ok: true, data });
   } catch (err) {
-    console.error('[upstream]', err.message);
-    res.status(502).json({ ok: false, error: 'Upstream error' });
+    handleUpstreamError(err, res);
   }
 });
 
@@ -169,8 +175,7 @@ app.get('/api/dns', async (req, res) => {
     const data = await gluetunFetch('/v1/dns/status', 'GET', null, inst.url, inst.apiKey);
     res.json({ ok: true, data });
   } catch (err) {
-    console.error('[upstream]', err.message);
-    res.status(502).json({ ok: false, error: 'Upstream error' });
+    handleUpstreamError(err, res);
   }
 });
 
@@ -187,12 +192,14 @@ app.get('/api/health', async (req, res) => {
   ]);
 
   results.forEach(r => { if (r.status === 'rejected') console.error('[upstream]', r.reason?.message); });
+  const authError = results.some(r => r.status === 'rejected' && r.reason?.status === 401);
   const [vpnStatus, publicIp, portForwarded, dnsStatus, vpnSettings] = results.map(r =>
     r.status === 'fulfilled' ? { ok: true, data: r.value } : { ok: false, error: 'Upstream error' }
   );
 
   res.json({
     timestamp: new Date().toISOString(),
+    authError,
     vpnStatus,
     publicIp,
     portForwarded,
@@ -237,8 +244,7 @@ app.put('/api/vpn/:action', vpnActionLimiter, async (req, res) => {
     );
     res.json({ ok: true, data });
   } catch (err) {
-    console.error('[upstream]', err.message);
-    res.status(502).json({ ok: false, error: 'Upstream error' });
+    handleUpstreamError(err, res);
   }
 });
 

@@ -165,6 +165,9 @@ function renderBanner(n, state, publicIp) {
   } else if (state === 'unconfigured') {
     setTextI(n, 'banner-title', 'Not Configured');
     setTextI(n, 'banner-sub', `Set GLUETUN_${n}_URL to enable this instance`);
+  } else if (state === 'unauthorized') {
+    setTextI(n, 'banner-title', 'Unauthorized');
+    setTextI(n, 'banner-sub', `Set GLUETUN_${n}_API_KEY (or GLUETUN_API_KEY) to authenticate`);
   } else {
     setTextI(n, 'banner-title', 'Status Unknown');
     setTextI(n, 'banner-sub', 'Could not reach Gluetun control API');
@@ -192,6 +195,12 @@ async function pollInstance(n) {
   try {
     const health = await fetchHealth(n);
     const { vpnStatus, publicIp, portForwarded, dnsStatus, vpnSettings } = health;
+
+    if (health.authError) {
+      renderBanner(n, 'unauthorized', { ok: false });
+      pushHistory(n, 'unknown');
+      return;
+    }
 
     const { state } = renderVpnStatus(n, vpnStatus, vpnSettings, publicIp);
     renderPublicIp(n, publicIp);
