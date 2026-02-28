@@ -103,6 +103,20 @@ async function gluetunFetch(endpoint, method = 'GET', body = null, baseUrl = '',
   }
 }
 
+// Tries /v1/vpn/settings first; falls back to /v1/openvpn/settings on 401/404
+// so that Gluetun roles that only expose the legacy OpenVPN endpoint still work.
+async function fetchVpnSettings(baseUrl, apiKey) {
+  try {
+    return await gluetunFetch('/v1/vpn/settings', 'GET', null, baseUrl, apiKey);
+  } catch (err) {
+    if (err.status === 401 || err.status === 404) {
+      console.warn('[upstream] /v1/vpn/settings returned', err.status, '– falling back to /v1/openvpn/settings');
+      return gluetunFetch('/v1/openvpn/settings', 'GET', null, baseUrl, apiKey);
+    }
+    throw err;
+  }
+}
+
 function handleUpstreamError(err, res) {
   console.error('[upstream]', err.message);
   if (err.status === 401) {
@@ -161,7 +175,7 @@ app.get('/api/settings', async (req, res) => {
   const inst = resolveInstance(req, res);
   if (!inst) return;
   try {
-    const data = await gluetunFetch('/v1/vpn/settings', 'GET', null, inst.url, inst.apiKey);
+    const data = await fetchVpnSettings(inst.url, inst.apiKey);
     res.json({ ok: true, data });
   } catch (err) {
     handleUpstreamError(err, res);
@@ -188,7 +202,7 @@ app.get('/api/health', async (req, res) => {
     gluetunFetch('/v1/publicip/ip',  'GET', null, inst.url, inst.apiKey),
     gluetunFetch('/v1/openvpn/portforwarded', 'GET', null, inst.url, inst.apiKey),
     gluetunFetch('/v1/dns/status',   'GET', null, inst.url, inst.apiKey),
-    gluetunFetch('/v1/vpn/settings', 'GET', null, inst.url, inst.apiKey),
+    fetchVpnSettings(inst.url, inst.apiKey),
   ]);
 
   results.forEach(r => { if (r.status === 'rejected') console.error('[upstream]', r.reason?.message); });
