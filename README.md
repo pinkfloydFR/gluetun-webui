@@ -99,12 +99,6 @@ In the `services:` block, add:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 5s
-      start_period: 10s
-      retries: 3
     logging:
       driver: "json-file"
       options:
@@ -221,6 +215,34 @@ networks:
 | `GLUETUN_API_KEY` | _(empty)_ | Bearer token (maps to instance 1 if `GLUETUN_1_API_KEY` is not set) |
 
 > **Note:** The UI always shows two fixed columns. If instance 2 is not configured (`GLUETUN_2_URL` is empty), the second column remains visible but shows "Not Configured".
+
+
+### config.toml
+[[roles]]
+name = "public_access"
+
+routes = [
+  "GET /v1/publicip/ip",
+  "GET /v1/portforward",
+  "PUT /v1/portforward",
+  "GET /v1/openvpn/portforwarded",
+  "GET /v1/openvpn/settings",
+  "PUT /v1/openvpn/settings",
+  "GET /v1/vpn/settings",
+  "PUT /v1/vpn/settings",
+  "GET /v1/openvpn/status",
+  "PUT /v1/openvpn/status",
+  "GET /v1/vpn/status",
+  "PUT /v1/vpn/status",
+  "GET /v1/dns/status",
+  "PUT /v1/dns/status",
+  "GET /v1/updater/status",
+  "PUT /v1/updater/status"
+]
+
+auth = "apikey"
+apikey = "xxxxxxxxxxx"
+
 
 ---
 
