@@ -40,58 +40,18 @@ A lightweight web UI for monitoring and controlling [Gluetun](https://github.com
 
 ## Quick Start
 
-### Option A: Docker Hub (Recommended)
-
-Add `gluetun-webui` to your existing compose file alongside Gluetun:
-
-```yaml
-gluetun-webui:
-  image: scuzza/gluetun-webui:latest
-  container_name: gluetun-webui
-  ports:
-    - "127.0.0.1:3000:3000"
-  environment:
-    # Instance 1
-    - GLUETUN_1_NAME=Gluetun 1
-    - GLUETUN_1_URL=http://gluetun1:8000
-    # - GLUETUN_1_API_KEY=yourtoken1
-    # Instance 2 (omit or leave GLUETUN_2_URL empty to show as unavailable)
-    - GLUETUN_2_NAME=Gluetun 2
-    - GLUETUN_2_URL=http://gluetun2:8000
-    # - GLUETUN_2_API_KEY=yourtoken2
-  networks:
-    - your_network_name
-  restart: unless-stopped
-  read_only: true
-  tmpfs:
-    - /tmp
-  security_opt:
-    - no-new-privileges:true
-  cap_drop:
-    - ALL
-  healthcheck:
-    test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/instances"]
-    interval: 30s
-    timeout: 5s
-    start_period: 10s
-    retries: 3
-```
-
-Then run:
+This is a customised fork — there is no pre-built Docker Hub image for it.
+You must **build the image locally** from this repository so that your modifications are included.
 
 ```bash
-docker compose up -d
+git clone https://github.com/pinkfloydFR/gluetun-webui.git
+cd gluetun-webui
+docker compose -f docker-compose.example.yml up -d --build
 ```
 
 The UI is available at **http://localhost:3000**
 
-### Option B: Build Locally
-
-```bash
-git clone https://github.com/Sir-Scuzza/gluetun-webui.git
-cd gluetun-webui
-docker compose up -d --build
-```
+> **Why build locally?**  Using a pre-built image from the original upstream project (`scuzza/gluetun-webui`) would run the unmodified original code and ignore all changes made in this fork. Building with `--build` compiles the image from the local `Dockerfile` so every customisation is included.
 
 ---
 
