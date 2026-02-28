@@ -147,12 +147,14 @@ main {
 .status-banner.paused      { border-color: var(--yellow); background: rgba(250,204,21,0.07); }
 .status-banner.disconnected{ border-color: var(--red);    background: rgba(248,113,113,0.07); }
 .status-banner.unknown     { border-color: var(--muted);  background: rgba(100,116,139,0.07); }
+.status-banner.unauthorized{ border-color: var(--red);    background: rgba(248,113,113,0.07); }
 
 .banner-icon { font-size: 1.6rem; line-height: 1; transition: color 0.3s; }
 .status-banner.connected    .banner-icon { color: var(--green); }
 .status-banner.paused       .banner-icon { color: var(--yellow); }
 .status-banner.disconnected .banner-icon { color: var(--red); }
 .status-banner.unknown      .banner-icon { color: var(--muted); }
+.status-banner.unauthorized .banner-icon { color: var(--red); }
 
 .banner-text { flex: 1; }
 .banner-title { font-size: 1.05rem; font-weight: 600; display: block; }
