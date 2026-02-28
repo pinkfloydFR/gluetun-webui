@@ -123,12 +123,20 @@ services:
   gluetun-fr:
     image: qmcgaw/gluetun
     # … your existing gluetun config …
+    environment:
+      - HTTP_CONTROL_SERVER_AUTH_CONFIG_FILEPATH=/gluetun/auth/config.toml
+    volumes:
+      - ./gluetun-fr/config.toml:/gluetun/auth/config.toml:ro
     networks:
       - arr-stack
 
-  gluetun-us:
+gluetun-us:
     image: qmcgaw/gluetun
     # … your existing gluetun config …
+    environment:
+      - HTTP_CONTROL_SERVER_AUTH_CONFIG_FILEPATH=/gluetun/auth/config.toml
+    volumes:
+      - ./gluetun-us/config.toml:/gluetun/auth/config.toml:ro
     networks:
       - arr-stack
 
@@ -218,6 +226,7 @@ networks:
 
 
 ### config.toml
+```yaml
 [[roles]]
 name = "public_access"
 
@@ -242,6 +251,7 @@ routes = [
 
 auth = "apikey"
 apikey = "xxxxxxxxxxx"
+```
 
 
 ---
