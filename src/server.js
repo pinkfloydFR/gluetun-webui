@@ -210,7 +210,11 @@ app.get('/api/dns', async (req, res) => {
 });
 
 // Aggregate health snapshot
+// Without ?instance=, acts as a simple liveness probe (used by the Docker HEALTHCHECK).
 app.get('/api/health', async (req, res) => {
+  if (!req.query.instance) {
+    return res.json({ ok: true });
+  }
   const inst = resolveInstance(req, res);
   if (!inst) return;
   const results = await Promise.allSettled([
