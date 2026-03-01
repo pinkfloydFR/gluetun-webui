@@ -233,14 +233,8 @@ name = "public_access"
 routes = [
   "GET /v1/publicip/ip",
   "GET /v1/portforward",
-  "PUT /v1/portforward",
-  "GET /v1/openvpn/portforwarded",
-  "GET /v1/openvpn/settings",
-  "PUT /v1/openvpn/settings",
   "GET /v1/vpn/settings",
   "PUT /v1/vpn/settings",
-  "GET /v1/openvpn/status",
-  "PUT /v1/openvpn/status",
   "GET /v1/vpn/status",
   "PUT /v1/vpn/status",
   "GET /v1/dns/status",
@@ -248,6 +242,7 @@ routes = [
   "GET /v1/updater/status",
   "PUT /v1/updater/status"
 ]
+
 
 auth = "apikey"
 apikey = "xxxxxxxxxxx"
