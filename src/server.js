@@ -337,13 +337,19 @@ const staticLimiter = rateLimit({
 
 app.put('/api/vpn/:action', vpnActionLimiter, async (req, res) => {
   const { action } = req.params;
-  const allowed = ['start', 'stop'];
+  const allowed = ['start', 'stop', 'restart'];
   if (!allowed.includes(action)) {
-    return res.status(400).json({ ok: false, error: 'Invalid action. Use start or stop.' });
+    return res.status(400).json({ ok: false, error: 'Invalid action. Use start, stop, or restart.' });
   }
   const inst = resolveInstance(req, res);
   if (!inst) return;
   try {
+    if (action === 'restart') {
+      await gluetunFetch('/v1/vpn/status', 'PUT', { status: 'stopped' }, inst.url, inst.apiKey);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      const data = await gluetunFetch('/v1/vpn/status', 'PUT', { status: 'running' }, inst.url, inst.apiKey);
+      return res.json({ ok: true, data });
+    }
     const data = await gluetunFetch(
       '/v1/vpn/status',
       'PUT',

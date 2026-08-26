@@ -174,6 +174,13 @@ function renderBanner(n, state, publicIp) {
   }
 }
 
+function updateStartButton(n, running) {
+  const btnStart = $i(n, 'btn-start');
+  if (!btnStart) return;
+  btnStart.dataset.action = running ? 'restart' : 'start';
+  btnStart.innerHTML = running ? '&#8635; Restart' : '&#9654; Start';
+}
+
 function renderUnconfigured(n) {
   const banner = $i(n, 'status-banner');
   if (banner) banner.className = 'status-banner unknown';
@@ -198,6 +205,7 @@ async function pollInstance(n) {
 
     if (health.authError) {
       renderBanner(n, 'unauthorized', { ok: false });
+      updateStartButton(n, false);
       pushHistory(n, 'unknown');
       return;
     }
@@ -207,6 +215,7 @@ async function pollInstance(n) {
     renderPortForwarded(n, portForwarded);
     renderDns(n, dnsStatus);
     renderBanner(n, state, publicIp);
+    updateStartButton(n, state === 'connected');
     pushHistory(n, state);
   } catch (err) {
     // 503 = not configured (race: config changed after page load)
@@ -215,6 +224,7 @@ async function pollInstance(n) {
       return;
     }
     showToast(`Instance ${n}: Failed to reach server: ${err.message}`, 'error');
+    updateStartButton(n, false);
     pushHistory(n, 'unknown');
     renderBanner(n, 'unknown', { ok: false });
   }
@@ -243,7 +253,7 @@ async function poll() {
 
 async function vpnAction(n, action) {
   if (!instanceConfig[n].configured) return;
-  const label = action === 'start' ? 'Starting' : 'Stopping';
+  const label = action === 'start' ? 'Starting' : action === 'restart' ? 'Restarting' : 'Stopping';
   showToast(`${label} VPN (instance ${n})…`, 'info', 5000);
   try {
     const res = await fetch(`/api/vpn/${action}?instance=${n}`, { method: 'PUT' });
@@ -310,7 +320,7 @@ async function init() {
   INSTANCE_IDS.forEach(n => {
     const btnStart = document.getElementById(`i${n}-btn-start`);
     const btnStop  = document.getElementById(`i${n}-btn-stop`);
-    if (btnStart) btnStart.addEventListener('click', () => vpnAction(n, 'start'));
+    if (btnStart) btnStart.addEventListener('click', () => vpnAction(n, btnStart.dataset.action || 'start'));
     if (btnStop)  btnStop.addEventListener('click',  () => vpnAction(n, 'stop'));
   });
 
