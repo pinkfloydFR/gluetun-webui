@@ -24,6 +24,11 @@ const INSTANCES = {
 // Apprise-compatible alerting (e.g. https://github.com/caronc/apprise-api).
 // Disabled unless APPRISE_URL is set. Sends a notification only on VPN
 // up/down state transitions (never repeats on every poll) so it never spams.
+// This monitor is observe-and-notify only: it never calls start/stop/restart
+// itself. Actual recovery from a down VPN is either a manual click on the
+// UI's Start/Restart button, or handled externally (e.g. an autoheal tool
+// watching the Gluetun container's own Docker healthcheck). Do not add
+// automatic recovery logic here — it would race with any external autoheal.
 const APPRISE_URL = process.env.APPRISE_URL || '';
 const APPRISE_TAG = process.env.APPRISE_TAG || 'telegram';
 const ALERT_CHECK_INTERVAL_MS = parseInt(process.env.ALERT_CHECK_INTERVAL_MS, 10) || 30000;
