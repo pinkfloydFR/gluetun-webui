@@ -57,6 +57,14 @@ services:
       #- GLUETUN_2_URL=http://gluetun-us:8000
       #- GLUETUN_2_API_KEY=token_for_instance_2
 
+      # ── Alerting (optional) ──────────────────────────────────────────────
+      # Sends a notification via an Apprise-compatible endpoint on VPN
+      # up/down transitions (never on every poll). Leave APPRISE_URL unset
+      # to disable alerting entirely.
+      #- APPRISE_URL=https://your-apprise-host/notify/your-token/
+      #- APPRISE_TAG=telegram
+      #- ALERT_CHECK_INTERVAL_MS=30000
+
     networks:
       - ext-network
 

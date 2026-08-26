@@ -21,6 +21,77 @@ const INSTANCES = {
   },
 };
 
+// Apprise-compatible alerting (e.g. https://github.com/caronc/apprise-api).
+// Disabled unless APPRISE_URL is set. Sends a notification only on VPN
+// up/down state transitions (never repeats on every poll) so it never spams.
+const APPRISE_URL = process.env.APPRISE_URL || '';
+const APPRISE_TAG = process.env.APPRISE_TAG || 'telegram';
+const ALERT_CHECK_INTERVAL_MS = parseInt(process.env.ALERT_CHECK_INTERVAL_MS, 10) || 30000;
+
+async function sendAppriseNotification(title, body, type = 'info') {
+  if (!APPRISE_URL) return;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  try {
+    const res = await fetch(APPRISE_URL, {
+      method: 'POST',
+      signal: controller.signal,
+      body: new URLSearchParams({ tag: APPRISE_TAG, title, body, type }),
+    });
+    if (!res.ok) {
+      console.error('[apprise] notify failed with status', res.status);
+    } else {
+      console.log('[apprise] notify sent:', title);
+    }
+  } catch (err) {
+    console.error('[apprise] notify error', err.message);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+// Tracks last *notified* state per instance so alerts fire only on change.
+// null = no notification sent yet (avoids a spurious "back up" alert on boot).
+const alertState = {};
+Object.keys(INSTANCES).forEach(id => { alertState[id] = { lastNotified: null }; });
+
+async function checkInstanceForAlert(id, inst) {
+  let state;
+  let detail;
+  try {
+    const data = await gluetunFetch('/v1/vpn/status', 'GET', null, inst.url, inst.apiKey);
+    state = data?.status === 'running' ? 'up' : 'down';
+    detail = `VPN status: ${data?.status ?? 'unknown'}`;
+  } catch (err) {
+    state = 'down';
+    detail = `Unreachable: ${err.message}`;
+  }
+
+  const prev = alertState[id];
+  if (prev.lastNotified !== state) {
+    if (state === 'down') {
+      await sendAppriseNotification(`🔴 ${inst.name} DOWN`, detail, 'failure');
+    } else if (prev.lastNotified !== null) {
+      await sendAppriseNotification(`🟢 ${inst.name} back UP`, detail, 'success');
+    }
+    prev.lastNotified = state;
+  }
+}
+
+function startAlertMonitor() {
+  if (!APPRISE_URL) {
+    console.log('[apprise] APPRISE_URL not set — alerting disabled');
+    return;
+  }
+  const configured = Object.entries(INSTANCES).filter(([, inst]) => inst.url);
+  console.log(`[apprise] alerting enabled (tag=${APPRISE_TAG}, interval=${ALERT_CHECK_INTERVAL_MS}ms) for ${configured.length} instance(s)`);
+  setInterval(() => {
+    configured.forEach(([id, inst]) => {
+      checkInstanceForAlert(id, inst).catch(err => console.error('[apprise] check failed', err.message));
+    });
+  }, ALERT_CHECK_INTERVAL_MS);
+}
+
 function resolveInstance(req, res) {
   const id = req.query.instance;
   if (!id || !Object.prototype.hasOwnProperty.call(INSTANCES, id)) {
@@ -309,4 +380,5 @@ app.listen(PORT, () => {
       console.log(`Instance ${id} (${inst.name}): not configured`);
     }
   });
+  startAlertMonitor();
 });

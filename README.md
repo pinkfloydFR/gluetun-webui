@@ -224,6 +224,16 @@ networks:
 
 > **Note:** The UI always shows two fixed columns. If instance 2 is not configured (`GLUETUN_2_URL` is empty), the second column remains visible but shows "Not Configured".
 
+### Alerting (optional)
+
+| Variable | Default | Description |
+|---|---|---|
+| `APPRISE_URL` | _(empty)_ | Full [Apprise](https://github.com/caronc/apprise-api)-compatible notify URL. Leave unset to disable alerting entirely. |
+| `APPRISE_TAG` | `telegram` | Apprise tag to notify. |
+| `ALERT_CHECK_INTERVAL_MS` | `30000` | How often the server checks each configured instance's VPN status in the background. |
+
+When `APPRISE_URL` is set, the server independently polls each configured instance every `ALERT_CHECK_INTERVAL_MS` (regardless of whether the UI is open) and sends a notification only when a VPN's status **changes** between up and down — never on every check, so it won't spam.
+
 
 ### config.toml
 ```yaml
